@@ -7,11 +7,11 @@ Resize images in bulk.
 
 ---
 
-# Bert - Your Bulk Image Resizing Buddy
-
 Meet Bert, the no-nonsense tool for resizing and compressing images in bulk. Got a pile of oversized assets clogging up your workflow? Bert's got your back. Forget the endless clicks and convoluted methods—just tell Bert what you need, and he'll handle the rest. Resize, crop, compress—Bert does it all with minimal fuss and maximum efficiency.
 
 Because life's too short for bloated images.
+
+---
 
 ## Usage
 

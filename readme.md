@@ -5,12 +5,20 @@
 Resize images in bulk.
 </div>
 
+---
+
+# Bert - Your Bulk Image Resizing Buddy
+
+Meet Bert, the no-nonsense tool for resizing and compressing images in bulk. Got a pile of oversized assets clogging up your workflow? Bert's got your back. Forget the endless clicks and convoluted methods—just tell Bert what you need, and he'll handle the rest. Resize, crop, compress—Bert does it all with minimal fuss and maximum efficiency.
+
+Because life's too short for bloated images.
+
 ## Usage
 
 ```
 Usage of .\bert.exe:
   -crop string
-        Crop position. Options: top, bottom, left, right, center. (default "center")
+        Crop position. Options: top, bottom, center. (default "center")
   -extension string
         Output image extension. Options: jpg, png. (default "jpg")
   -height int

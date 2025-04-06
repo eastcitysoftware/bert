@@ -55,7 +55,7 @@ func main() {
 		width:      flag.Int("width", 640, "Desired output width."),
 		height:     flag.Int("height", -1, "Desired output height. If > -1, image is cropped to this height."),
 		extension:  flag.String("extension", "jpg", "Output image extension. Options: jpg, png."),
-		focalPoint: flag.String("crop", "center", "Crop position. Options: top, bottom, left, right, center."),
+		focalPoint: flag.String("crop", "center", "Crop position. Options: top, bottom, center."),
 		quality:    flag.Int("quality", 95, "Quality of the output image. Only used for jpg."),
 	}
 
@@ -104,18 +104,19 @@ func main() {
 func resizeImage(src image.Image, resized io.Writer, config resizerConfig) error {
 	inputBounds := src.Bounds()
 
-	// Step 1: Scale the image to the desired width while maintaining the aspect ratio
+	// Scale the image to the desired width while maintaining the aspect ratio
 	aspectRatio := float64(inputBounds.Dy()) / float64(inputBounds.Dx())
 	scaledHeight := int(math.Round(float64(config.width) * aspectRatio))
 	scaledBounds := image.Rect(0, 0, config.width, scaledHeight)
 	scaledImage := image.NewRGBA(scaledBounds)
 	draw.BiLinear.Scale(scaledImage, scaledImage.Rect, src, inputBounds, draw.Over, nil)
 
-	// Step 2: Crop the scaled image to the desired height
+	// Crop the scaled image to the desired height
 	cropHeight := config.height
 	if cropHeight > scaledHeight {
 		cropHeight = scaledHeight // Ensure we don't crop beyond the scaled image
 	}
+
 	cropY := 0 // Default to top crop
 	switch config.focalPoint {
 	case "center":

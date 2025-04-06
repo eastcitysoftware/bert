@@ -1,6 +1,11 @@
-# bert (birt - bulk image resizer tool)
+<div align="center">
 
-bert is a nice little fellow who will help you resize images in bulk.
+![bert](https://github.com/eastcitysoftware/bert/blob/assets/bert.png?raw=true)
+
+Resize images in bulk.
+</div>
+
+## Usage
 
 ```
 Usage of .\bert.exe:
@@ -20,7 +25,7 @@ Usage of .\bert.exe:
         Desired output width. (default 640)
 ```
 
-## example
+## Example
 
 ```bash
 bert -input ./input -output ./output -width 800 -height 600 -quality 80 -extension jpg -crop center
@@ -28,7 +33,7 @@ bert -input ./input -output ./output -width 800 -height 600 -quality 80 -extensi
 
 This will resize all images in the input directory to 800x600, with a quality of 80, and save them as jpg files in the output directory. The images will be cropped to the center if they are not already 800x600.
 
-## example with a single file
+## Example with a single file
 
 ```bash
 bert -input ./input/image.png -output ./output -width 800 -height 600 -quality 80 -extension jpg -crop center

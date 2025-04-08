@@ -111,28 +111,36 @@ func resizeImage(src image.Image, resized io.Writer, config resizerConfig) error
 	scaledImage := image.NewRGBA(scaledBounds)
 	draw.BiLinear.Scale(scaledImage, scaledImage.Rect, src, inputBounds, draw.Over, nil)
 
-	// Crop the scaled image to the desired height
-	cropHeight := config.height
-	if cropHeight > scaledHeight {
-		cropHeight = scaledHeight // Ensure we don't crop beyond the scaled image
+	if config.height > 0 {
+		// If a height is specified, crop the image to the desired height
+		cropHeight := config.height
+		if cropHeight > scaledHeight {
+			cropHeight = scaledHeight // Ensure we don't crop beyond the scaled image
+		}
+
+		cropY := 0 // Default to top crop
+		switch config.focalPoint {
+		case "center":
+			cropY = (scaledHeight - cropHeight) / 2
+		case "bottom":
+			cropY = scaledHeight - cropHeight
+		}
+		croppedBounds := image.Rect(0, cropY, config.width, cropY+cropHeight)
+		croppedImage := scaledImage.SubImage(croppedBounds)
+
+		switch config.mimetype {
+		case "image/png":
+			return png.Encode(resized, croppedImage)
+		default:
+			return jpeg.Encode(resized, croppedImage, &jpeg.Options{Quality: config.quality})
+		}
 	}
 
-	cropY := 0 // Default to top crop
-	switch config.focalPoint {
-	case "center":
-		cropY = (scaledHeight - cropHeight) / 2
-	case "bottom":
-		cropY = scaledHeight - cropHeight
-	}
-	croppedBounds := image.Rect(0, cropY, config.width, cropY+cropHeight)
-	croppedImage := scaledImage.SubImage(croppedBounds)
-
-	// Step 3: Encode the cropped image to the desired format
 	switch config.mimetype {
 	case "image/png":
-		return png.Encode(resized, croppedImage)
+		return png.Encode(resized, scaledImage)
 	default:
-		return jpeg.Encode(resized, croppedImage, &jpeg.Options{Quality: config.quality})
+		return jpeg.Encode(resized, scaledImage, &jpeg.Options{Quality: config.quality})
 	}
 }
 

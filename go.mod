@@ -1,4 +1,4 @@
-module github.com/eastcitysoftwate/bert
+module github.com/eastcitysoftware/bert
 
 go 1.24.1
 

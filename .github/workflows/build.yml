@@ -18,6 +18,3 @@ jobs:
 
       - name: Test scale
         run: go test ./internal/scale/
-
-      - name: Test scale
-        run: go test ./internal/scale/

@@ -2,33 +2,61 @@ package scale
 
 import (
 	"image"
+	"log"
 	"math"
 
 	"golang.org/x/image/draw"
 )
 
-type scale struct {
-	width  int
-	height int
+const (
+	FocalTop    = "top"
+	FocalCenter = "center"
+	FocalBottom = "bottom"
+)
+
+// ScaleTo defines the target size and focal point for scaling an image.
+// If the height is set to -1, the image will be scaled to the width only, (i.e., auto height).
+type ScaleTo struct {
+	Width  int
+	Height int
+	// Focal determines where the crop will be taken from.
+	// Options are: scale.FocalTop, scale.FocalCenter, scale.FocalBottom
+	// The default is scale.FocalTop.
+	Focal string
 }
 
-func ScaleImage(src image.Image, width int) *image.RGBA {
-	inputBounds := src.Bounds()
-	scale := getScale(inputBounds.Dx(), inputBounds.Dy(), width)
-	scaledBounds := getScaleBounds(scale)
-	scaledImage := image.NewRGBA(scaledBounds)
-	draw.BiLinear.Scale(scaledImage, scaledImage.Rect, src, inputBounds, draw.Over, nil)
-	return scaledImage
+func ScaleImage(src image.Image, scaleTo ScaleTo) image.Image {
+	srcBounds := src.Bounds()
+	scale := getScale(scaleTo, srcBounds.Dx(), srcBounds.Dy())
+	scaledImage := image.NewRGBA(scale)
+	draw.BiLinear.Scale(scaledImage, scaledImage.Rect, src, srcBounds, draw.Over, nil)
+
+	if scaleTo.Height > 0 {
+		crop := getCrop(scaleTo, scale.Dx(), scale.Dy())
+		return scaledImage.SubImage(crop).(*image.RGBA)
+	} else {
+		return scaledImage
+	}
 }
 
-func getScaleBounds(scale *scale) image.Rectangle {
-	return image.Rect(0, 0, scale.width, scale.height)
-}
-
-func getScale(width int, height int, scaleWidth int) *scale {
+func getScale(scaleTo ScaleTo, width int, height int) image.Rectangle {
 	aspectRatio := float64(height) / float64(width)
-	scaleHeight := int(math.Round(float64(scaleWidth) * aspectRatio))
-	return &scale{
-		width:  scaleWidth,
-		height: scaleHeight}
+	scaleToHeight := int(math.Round(float64(scaleTo.Width) * aspectRatio))
+	return image.Rect(0, 0, scaleTo.Width, scaleToHeight)
+}
+
+func getCrop(scaleTo ScaleTo, width int, height int) image.Rectangle {
+	cropHeight := min(scaleTo.Height, height)
+	cropY := 0 // Default to top crop
+
+	switch scaleTo.Focal {
+	case FocalCenter:
+		cropY = (height - cropHeight) / 2
+	case FocalBottom:
+		cropY = height - cropHeight
+	}
+
+	log.Printf("Crop Y: %d, Crop Height: %d", cropY, cropHeight)
+
+	return image.Rect(0, cropY, width, cropY+cropHeight)
 }

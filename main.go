@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/eastcitysoftware/bert/internal/crop"
 	"github.com/eastcitysoftware/bert/internal/scale"
 	"golang.org/x/image/webp"
 )
@@ -39,11 +38,12 @@ type resize struct {
 func main() {
 	inputPath := flag.String("input", "", "input path, can be a file or directory")
 	outputPath := flag.String("output", "", "the output directory path")
+	outputType := flag.String("type", "jpg", "image output type. Options: jpg, png")
+	quality := flag.Int("quality", 95, "quality of the output image. Only used for jpg")
+
 	width := flag.Int("width", 640, "desired output width")
 	height := flag.Int("height", -1, "desired output height. If > -1, image is cropped to this height")
-	extension := flag.String("extension", "jpg", "output image extension. Options: jpg, png")
-	focalPoint := flag.String("crop", "center", "crop position. Options: top, bottom, center")
-	quality := flag.Int("quality", 95, "quality of the output image. Only used for jpg")
+	focalPoint := flag.String("focal", "center", "crop position. Options: top, bottom, center")
 
 	flag.Parse()
 
@@ -83,7 +83,7 @@ func main() {
 	if *height < -1 || *height == 0 {
 		log.Fatalf("height must be -1 or greater than 0")
 	}
-	if *extension != "jpg" && *extension != "png" {
+	if *outputType != "jpg" && *outputType != "png" {
 		log.Fatalf("invalid extension, must be jpg or png")
 	}
 	if *focalPoint != "top" && *focalPoint != "bottom" && *focalPoint != "left" && *focalPoint != "right" && *focalPoint != "center" {
@@ -94,14 +94,14 @@ func main() {
 	}
 
 	// get all files in the imagesPath directory
-	imagesToProcess, err := getImages(*inputPath, *outputPath, *extension)
+	imagesToProcess, err := getImages(*inputPath, *outputPath, *outputType)
 	if err != nil {
 		log.Fatalf("failed to get images for processing: %v", imagesToProcess)
 	}
 	log.Printf("found %d images to process\n", len(imagesToProcess))
 
 	resize := resize{
-		outputMimetype: getMimetype(*extension),
+		outputMimetype: getMimetype(*outputType),
 		width:          *width,
 		height:         *height,
 		focalPoint:     *focalPoint,
@@ -126,44 +126,26 @@ func processImage(src imageToProcess, resize resize) error {
 	}
 	defer resized.Close()
 
-	decodedImage, err := getImage(original, getMimetype(src.inputPath))
+	decodedImage, err := decodeImage(original, getMimetype(src.inputPath))
 	if err != nil {
 		return fmt.Errorf("failed to decode image: %v", err)
 	}
 
-	return resizeImage(decodedImage, resized, resize)
-}
-
-func resizeImage(src image.Image, dst io.Writer, config resize) error {
 	// Scale the image to the desired width while maintaining the aspect ratio
-	scaledImage := scale.ScaleImage(src, config.width)
-
-	var cropImage image.Image
-	if config.height > 0 {
-		scaledBounds := scaledImage.Bounds()
-		scaledWidth := scaledBounds.Dx()
-		scaledHeight := scaledBounds.Dy()
-		cropImage = crop.CropImage(
-			scaledImage,
-			scaledWidth,
-			scaledHeight,
-			min(config.height, scaledHeight),
-			config.focalPoint)
-	}
+	scaledImage := scale.ScaleImage(decodedImage, scale.ScaleTo{
+		Width:  resize.width,
+		Height: resize.height,
+		Focal:  resize.focalPoint})
 
 	switch {
-	case config.outputMimetype == pngMimeType && cropImage != nil:
-		return png.Encode(dst, cropImage)
-	case config.outputMimetype == pngMimeType:
-		return png.Encode(dst, scaledImage)
-	case config.outputMimetype == jpegMimeType && cropImage != nil:
-		return jpeg.Encode(dst, cropImage, &jpeg.Options{Quality: config.quality})
+	case resize.outputMimetype == pngMimeType:
+		return png.Encode(resized, scaledImage)
 	default:
-		return jpeg.Encode(dst, scaledImage, &jpeg.Options{Quality: config.quality})
+		return jpeg.Encode(resized, scaledImage, &jpeg.Options{Quality: resize.quality})
 	}
 }
 
-func getImage(original io.Reader, mimeType string) (image.Image, error) {
+func decodeImage(original io.Reader, mimeType string) (image.Image, error) {
 	var src image.Image
 	var err error
 

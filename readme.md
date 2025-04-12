@@ -2,6 +2,9 @@
 
 ![bert](https://github.com/eastcitysoftware/bert/blob/assets/bert.png?raw=true)
 
+[![build](https://github.com/eastcitysoftware/bert/actions/workflows/build.yml/badge.svg)](https://github.com/eastcitysoftware/bert/actions/workflows/build.yml)
+![License](https://img.shields.io/github/license/eastcitysoftware/bert)
+
 Resize images in bulk.
 </div>
 

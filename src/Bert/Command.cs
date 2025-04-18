@@ -74,7 +74,7 @@ public sealed class BertCommand : Command
         AddOption(heightOption);
         this.SetHandler((input, output, type, quality, width, height) =>
         {
-            if(!Directory.Exists(output))
+            if (!Directory.Exists(output))
             {
                 Directory.CreateDirectory(output);
             }

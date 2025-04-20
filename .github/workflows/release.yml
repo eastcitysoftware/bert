@@ -1,4 +1,4 @@
-name: Publish and Release
+name: release
 
 on:
   push:
@@ -12,14 +12,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest]
         include:
           - os: ubuntu-latest
             rid: linux-x64
-          - os: windows-latest
-            rid: win-x64
-          - os: macos-latest
-            rid: osx-x64
+          # - os: windows-latest
+          #   rid: win-x64
+          # - os: macos-latest
+          #   rid: osx-x64
 
     steps:
       - name: Checkout code
@@ -53,7 +54,8 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
-          path: ./artifacts
+          name: ${{ matrix.rid }}-binaries
+          path: ./artifacts/${{ matrix.rid }}
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
@@ -65,6 +67,8 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./artifacts/linux-x64/*
-            ./artifacts/win-x64/*
-            ./artifacts/osx-x64/*
+            ./artifacts/${{ matrix.rid }}/*
+          # files: |
+          #   ./artifacts/linux-x64/*
+          #   ./artifacts/win-x64/*
+          #   ./artifacts/osx-x64/*

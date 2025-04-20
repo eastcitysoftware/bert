@@ -12,15 +12,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # os: [ubuntu-latest, windows-latest, macos-latest]
         os: [ubuntu-latest]
         include:
           - os: ubuntu-latest
             rid: linux-x64
-          # - os: windows-latest
-          #   rid: win-x64
-          # - os: macos-latest
-          #   rid: osx-x64
 
     steps:
       - name: Checkout code
@@ -54,8 +49,8 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
-          name: ${{ matrix.rid }}-binaries
-          path: ./artifacts/${{ matrix.rid }}
+          name: linux-x64-binaries
+          path: ./artifacts/linux-x64
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
@@ -67,8 +62,4 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./artifacts/${{ matrix.rid }}/*
-          # files: |
-          #   ./artifacts/linux-x64/*
-          #   ./artifacts/win-x64/*
-          #   ./artifacts/osx-x64/*
+            ./artifacts/linux-x64/*

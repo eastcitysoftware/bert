@@ -14,7 +14,7 @@ public sealed class BertCommand : Command
 
         var outputOption = new Option<string>(
             aliases: ["--output", "-o"],
-            description: "The output directory to process.")
+            description: "The output file/directory to process.")
         {
             IsRequired = true
         };
@@ -64,7 +64,7 @@ public sealed class BertCommand : Command
 
         AddOption(widthOption);
 
-        var heightOption = new Option<int>(
+        var heightOption = new Option<int?>(
             aliases: ["--height", "-h"],
             description: "Desired output height.")
         {
@@ -72,78 +72,20 @@ public sealed class BertCommand : Command
         };
 
         AddOption(heightOption);
+
         this.SetHandler((input, output, type, quality, width, height) =>
-        {
-            if (!Directory.Exists(output))
-            {
-                Directory.CreateDirectory(output);
-            }
-
-            // Process image(s)
-            var scaleConfig = new ScaleConfig(
-                OutputWidth: width,
-                OutputHeight: height,
-                OutputType: type,
-                Quality: quality);
-
-            if (File.Exists(input))
-            {
-                // Process single file
-                var inputStream = File.OpenRead(input);
-                var outputName = Path.ChangeExtension(Path.GetFileName(input), type.ToString());
-                var outputPath = Path.Combine(output, outputName);
-
-                Console.WriteLine($"Processing {input}");
-
-                if (File.Exists(outputPath))
-                {
-                    File.Delete(outputPath);
-                }
-
-                using var outputStream = File.OpenWrite(outputPath);
-
-                Scaler
-                    .ScaleImage(scaleConfig, inputStream, outputStream)
-                    .Match(
-                        ok: _ => Console.WriteLine($"\tImage processed successfully: {outputPath}"),
-                        error: x => Console.WriteLine($"\tError processing image: {x}"));
-            }
-            else if (Directory.Exists(input))
-            {
-                // Process directory
-                foreach (var file in Directory.EnumerateFiles(input))
-                {
-                    if (!file.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
-                        && !file.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
-                        && !file.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
-                        && !file.EndsWith(".webp", StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    var inputStream = File.OpenRead(file);
-                    var outputName = Path.ChangeExtension(Path.GetFileName(file), type.ToString());
-                    var outputPath = Path.Combine(output, outputName);
-
-                    Console.WriteLine($"Processing {file}");
-
-                    if (File.Exists(outputPath))
-                    {
-                        File.Delete(outputPath);
-                    }
-
-                    using var outputStream = File.OpenWrite(outputPath);
-
-                    Scaler
-                        .ScaleImage(scaleConfig, inputStream, outputStream)
-                        .Match(
-                            ok: _ => Console.WriteLine($"\tOutput: {outputPath}"),
-                            error: x => Console.WriteLine($"\tError: {x}"));
-                }
-            }
-        }, inputArgument, outputOption, imageOutputType, qualityOption, widthOption, heightOption);
+            ImageProcessor.Process(new(input, output, type, quality, width, height)),
+            inputArgument, outputOption, imageOutputType, qualityOption, widthOption, heightOption);
     }
 }
+
+public sealed record CommandParams(
+    string Input,
+    string Output,
+    ImageOutputType Type,
+    int Quality,
+    int Width,
+    int? Height);
 
 public enum ImageOutputType
 {

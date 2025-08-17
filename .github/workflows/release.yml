@@ -28,7 +28,7 @@ jobs:
 
       - name: Publish .NET project
         run: |
-          dotnet publish src/Bert/Bert.csproj \
+          dotnet publish src/Bert/src/Bert.csproj \
             --configuration Release \
             --framework net9.0 \
             --runtime ${{ matrix.rid }} \

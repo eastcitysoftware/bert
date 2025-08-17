@@ -18,3 +18,12 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: Install solution dependencies
+        run: |
+          dotnet restore Bert.sln --force-evaluate --no-http-cache --force
+
+      - name: Test Core
+        run: |
+          dotnet build src/Bert/src -c Release
+          dotnet test src/Bert/test -c Release

@@ -22,22 +22,24 @@ Because life's too short for bloated images.
 Usage of .\bert.exe:
 
 Description:
-  Resize images in bulk.
+  bert, resize images in bulk
 
 Usage:
-  bert <input> [options]
+  bert <input> [command] [options]
 
 Arguments:
-  <input>  The input file/directory to process.
+  <input>  Input file/directory to process.
 
 Options:
-  -o, --output <output> (REQUIRED)                                            The output directory to process.
-  -t, --type <jpg|png>                                                        The image output type to process. [default: jpg]
-  -q, --quality <1-100 (default: 80)> (REQUIRED)                              The quality of the image to process. [default: 80]
-  -w, --width <If not specified, no scaling will be done.>                    Desired output width.
-  -h, --height <If specified, image is cropped to this height post-scaling.>  Desired output height.
-  --version                                                                   Show version information
-  -?, -h, --help                                                              Show help and usage information
+  -?, -h, --help                      Show help and usage information
+  --version                           Show version information
+  output, -o (REQUIRED)               Output file/directory to process.
+  type, -t <jpg|png>                  Output type. [default: jpg]
+  quality, -q <Full|High|Medium|Low>  Output quality. [default: High]
+
+Commands:
+  scale  Scale images to the specified width/height.
+  crop   Crop images to the specified width/height.
 ```
 
 ## Example

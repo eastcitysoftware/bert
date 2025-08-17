@@ -8,58 +8,71 @@ on:
       - 'release:*'
 
 jobs:
-  build-and-publish:
+  build-nativeaot:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
             rid: linux-x64
+          - os: macos-latest
+            rid: osx-x64
+          - os: windows-latest
+            rid: win-x64
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
 
-      - name: Publish .NET project
+      - name: Install dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang zlib1g-dev
+
+      - name: Publish NativeAOT
+        shell: bash
         run: |
           dotnet publish src/Bert/src/Bert.csproj \
             --configuration Release \
             --framework net9.0 \
             --runtime ${{ matrix.rid }} \
             --self-contained true \
-            /p:PublishAot=true \
-            --output ./publish/${{ matrix.rid }}
+            -p:PublishAot=true \
+            --output ./publish/nativeaot/${{ matrix.rid }}
 
-      - name: Upload artifact
+      - name: Upload NativeAOT artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.rid }}-binaries
-          path: ./publish/${{ matrix.rid }}
+          name: bert-nativeaot-${{ matrix.rid }}
+          path: ./publish/nativeaot/${{ matrix.rid }}
 
   create-release:
-    needs: build-and-publish
+    needs: [build-nativeaot]
     runs-on: ubuntu-latest
     steps:
-      - name: Download artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: linux-x64-binaries
-          path: ./artifacts/linux-x64
+          path: ./artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R ./artifacts
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
           files: |
-            ./artifacts/linux-x64/*
+            ./artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

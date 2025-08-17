@@ -1,17 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <AssemblyName>bert</AssemblyName>
+        <Version>0.0.1</Version>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
 
-  <PropertyGroup>
-    <AssemblyName>bert</AssemblyName>
-    <Version>0.0.1</Version>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Danom" Version="2.0.0-beta*" />
+        <PackageReference Include="SkiaSharp" Version="3.*" />
+        <PackageReference Include="System.CommandLine" Version="2.0.0-beta*" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Danom" Version="2.0.0-beta*" />
-    <PackageReference Include="SkiaSharp" Version="3.*" />
-    <PackageReference Include="System.CommandLine" Version="2.0.0-beta*" />
-  </ItemGroup>
+    <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' Or '$(RuntimeIdentifier)' == 'linux-arm64'">
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.*" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(RuntimeIdentifier)' == 'osx-x64' Or '$(RuntimeIdentifier)' == 'osx-arm64'">
+        <PackageReference Include="SkiaSharp.NativeAssets.Macos" Version="3.*" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64' Or '$(RuntimeIdentifier)' == 'win-arm64' Or '$(RuntimeIdentifier)' == 'win-x86'">
+        <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="3.*" />
+    </ItemGroup>
 </Project>

@@ -44,13 +44,14 @@ jobs:
             --framework net9.0 \
             --runtime ${{ matrix.rid }} \
             --output ./publish/${{ matrix.rid }} \
-            -p:SelfContained=true \
-            -p:SatelliteResourceLanguages=en-US \
+            --self-contained \
+            -p:PublishTrimmed=true \
+            -p:TrimMode=Link \
+            -p:PublishSingleFile=true \
             -p:PublishNativeAot=true \
+            -p:SatelliteResourceLanguages=en-US \
             -p:InvariantGlobalization=true \
-            -p:UseSystemResourceKeys=true \
             -p:IncludeNativeLibrariesForSelfExtract=true \
-            -p:IlcGenerateStackTraceData=true \
             -p:IlcOptimizationPreference=Speed \
             -p:IlcFoldIdenticalMethodBodies=true
 

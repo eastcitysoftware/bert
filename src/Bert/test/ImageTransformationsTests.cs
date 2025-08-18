@@ -1,5 +1,23 @@
 ﻿namespace Bert.Tests;
 
+public sealed class ImageTransformationsTests {
+    [Fact]
+    public void Dimensions_StructuralEquality() {
+        var dim1 = new Dimensions(100, 200);
+        var dim2 = new Dimensions(100, 200);
+        var dim3 = new Dimensions(200, 100);
+
+        Assert.Equal(dim1, dim2);
+        Assert.NotEqual(dim1, dim3);
+    }
+
+    [Fact]
+    public void Dimensions_ToStringOverride() {
+        var dimensions = new Dimensions(100, 200);
+        Assert.Equal("100x200", dimensions.ToString());
+    }
+}
+
 public sealed class ScalerTests {
     [Theory]
     [InlineData(100, 200, 50, 100, 25)]

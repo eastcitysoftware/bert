@@ -4,39 +4,45 @@ namespace Bert;
 
 public static class CommandProcessor {
     public static void Process(string input, string output, ImageParams param) {
+        IEnumerable<Result<ImageProcessingOutput, ImageProcessingError>> results;
         if (File.Exists(input)) {
-            ProcessFile(input, output, param);
+            results = [ProcessFile(input, output, param)];
         }
         else if (Directory.Exists(input)) {
-            ProcessDirectory(input, output, param);
+            results = ProcessDirectory(input, output, param);
         }
         else {
-            Console.WriteLine($"Input path does not exist: {input}");
+            results = [ImageProcessingResult.Error(input, "Input path does not exist")];
         }
+
+        Print.ResultsTable(results);
+
+        Console.WriteLine();
+        Print.Info($"Output: {output}");
     }
 
-    static void ProcessDirectory(string input, string output, ImageParams param) {
+    static IEnumerable<Result<ImageProcessingOutput, ImageProcessingError>> ProcessDirectory(
+        string input,
+        string output,
+        ImageParams param) {
         if (!Directory.Exists(input)) {
-            Console.WriteLine($"Input directory does not exist: {input}");
-            return;
+            yield return ImageProcessingResult.Error(input, $"Input directory does not exist");
         }
 
         foreach (var filePath in Directory.EnumerateFiles(input)) {
-            ProcessFile(filePath, output, param);
+            yield return ProcessFile(filePath, output, param with { FilePath = filePath });
         }
     }
 
-    static void ProcessFile(string input, string output, ImageParams param) {
+    static Result<ImageProcessingOutput, ImageProcessingError> ProcessFile(string input, string output, ImageParams param) {
         var file = new FileInfo(input);
 
         if (!file.Exists) {
-            Console.WriteLine($"Input file does not exist: {file.FullName}");
-            return;
+            return ImageProcessingResult.Error(file.FullName, "Input file does not exist");
         }
 
         if (!file.IsImage()) {
-            Console.WriteLine($"Input file is not a valid image: {file.FullName}");
-            return;
+            return ImageProcessingResult.Error(file.FullName, "Input file is not a valid image");
         }
 
         string outputPath = output; // Assume output is a file path
@@ -51,8 +57,6 @@ public static class CommandProcessor {
             }
         }
 
-        Console.WriteLine($"Processing {file.FullName}");
-
         if (File.Exists(outputPath)) {
             File.Delete(outputPath);
         }
@@ -60,7 +64,7 @@ public static class CommandProcessor {
         using var inputStream = File.OpenRead(file.FullName);
         using var outputStream = File.OpenWrite(outputPath);
 
-        var outputResult = param switch {
+        return param switch {
             CropParams cropParams =>
                 ImageProcessor.CropImage(cropParams, inputStream, outputStream),
 
@@ -70,12 +74,7 @@ public static class CommandProcessor {
             ScaleByHeightParams scaleByHeightParams =>
                 ImageProcessor.ScaleImage(scaleByHeightParams, inputStream, outputStream),
 
-            _ => Result.Error("Unsupported command mode.")
+            _ => ImageProcessingResult.Error(file.FullName, "Unsupported command mode.")
         };
-
-        outputResult
-            .Match(
-                ok: _ => Console.WriteLine($"Image processed successfully: {outputPath}"),
-                error: e => Console.WriteLine($"Error processing image: {e}"));
     }
 }

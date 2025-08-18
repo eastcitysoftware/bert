@@ -2,12 +2,13 @@
     <PropertyGroup>
         <SelfContained>true</SelfContained>
         <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
-        <PublishNativeAot>true</PublishNativeAot>
+        <PublishAot>true</PublishAot>
+        <PublishSingleFile>true</PublishSingleFile>
+        <PublishTrimmed>true</PublishTrimmed>
+        <TrimMode>Link</TrimMode>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
         <InvariantGlobalization>true</InvariantGlobalization>
         <UseSystemResourceKeys>true</UseSystemResourceKeys>
-        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-        <IlcGenerateStackTraceData>true</IlcGenerateStackTraceData>
-        <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
-        <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
+        <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     </PropertyGroup>
 </Project>

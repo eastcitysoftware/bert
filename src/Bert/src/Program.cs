@@ -152,9 +152,10 @@ int ExecuteCommand(ParseResult parseResult) {
 
     switch (parseResult.CommandResult.Command.Name, width, height) {
         case ("crop", int w, int h):
-            Console.WriteLine($"Performing 'crop': {w}px x {h}px / {outputType} / {quality} / crop-x:{cropX} / crop-y:{cropY}");
+            Print.Block($"Performing 'crop': {w}px x {h}px / {outputType} / {quality} / crop-x:{cropX} / crop-y:{cropY}");
             CommandProcessor.Process(input, output,
                 new CropParams(
+                    FilePath: input,
                     CropDimensions: new(w, h),
                     CropX: cropX,
                     CropY: cropY,
@@ -164,9 +165,10 @@ int ExecuteCommand(ParseResult parseResult) {
             break;
 
         case ("scale", int w, null):
-            Console.WriteLine($"Performing 'scale': {w}px width / {outputType} / {quality} / crop-y:{cropY}");
+            Print.Block($"Performing 'scale': {w}px width / {outputType} / {quality} / crop-y:{cropY}");
             CommandProcessor.Process(input, output,
                 new ScaleByWidthParams(
+                    FilePath: input,
                     Width: w,
                     OutputType: outputType,
                     Quality: quality,
@@ -175,9 +177,10 @@ int ExecuteCommand(ParseResult parseResult) {
             break;
 
         case ("scale", null, int h):
-            Console.WriteLine($"Performing 'scale': {h}px height / {outputType} / {quality} / crop-x:{cropX}");
+            Print.Block($"Performing 'scale': {h}px height / {outputType} / {quality} / crop-x:{cropX}");
             CommandProcessor.Process(input, output,
                 new ScaleByHeightParams(
+                    FilePath: input,
                     Height: h,
                     OutputType: outputType,
                     Quality: quality,
@@ -186,9 +189,10 @@ int ExecuteCommand(ParseResult parseResult) {
             break;
 
         case (_, int w, int h):
-            Console.WriteLine($"Performing 'scale': {w}px x {h}px / {outputType} / {quality} / crop-x:{cropX} / crop-y:{cropY}");
+            Print.Block($"Performing 'scale': {w}px x {h}px / {outputType} / {quality} / crop-x:{cropX} / crop-y:{cropY}");
             CommandProcessor.Process(input, output,
                 new ScaleByWidthParams(
+                    FilePath: input,
                     Width: w,
                     OutputType: outputType,
                     Quality: quality,
@@ -197,9 +201,11 @@ int ExecuteCommand(ParseResult parseResult) {
             break;
 
         default:
-            Console.WriteLine("Invalid command or parameters. Use 'bert --help' for usage information.");
+            Print.Error("Invalid command or parameters. Use 'bert --help' for usage information.");
             break;
     }
+
+    Console.WriteLine();
 
     return 0;
 }

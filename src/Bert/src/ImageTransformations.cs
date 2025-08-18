@@ -1,5 +1,42 @@
 namespace Bert;
 
+public readonly record struct Dimensions(
+    int Width,
+    int Height) {
+        public override string ToString() => $"{Width}x{Height}";
+    }
+
+public readonly record struct CropWindow(
+    int Left,
+    int Top,
+    int Right,
+    int Bottom,
+    Dimensions Dimensions);
+
+public enum CropX {
+    Left,
+    Center,
+    Right
+}
+
+public enum CropY {
+    Top,
+    Center,
+    Bottom
+}
+
+public enum ImageType {
+    jpg,
+    png
+}
+
+public enum ImageQuality {
+    Full = 100,
+    High = 90,
+    Medium = 75,
+    Low = 60
+}
+
 public static class Scaler {
     public static Dimensions ScaleToWidth(int width, Dimensions dimensions) {
         var aspectRatio = (double)dimensions.Height / dimensions.Width;
@@ -30,40 +67,6 @@ public static class Cropper {
             _ => throw new ArgumentOutOfRangeException(nameof(cropY), cropY, null)
         };
 
-        return new CropWindow(x, y, cropDimensions.Width + x, cropDimensions.Height + y);
+        return new CropWindow(x, y, cropDimensions.Width + x, cropDimensions.Height + y, cropDimensions);
     }
-}
-
-public readonly record struct Dimensions(
-    int Width,
-    int Height);
-
-public readonly record struct CropWindow(
-    int Left,
-    int Top,
-    int Right,
-    int Bottom);
-
-public enum CropX {
-    Left,
-    Center,
-    Right
-}
-
-public enum CropY {
-    Top,
-    Center,
-    Bottom
-}
-
-public enum ImageType {
-    jpg,
-    png
-}
-
-public enum ImageQuality {
-    Full = 100,
-    High = 90,
-    Medium = 75,
-    Low = 60
 }

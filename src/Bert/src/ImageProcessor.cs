@@ -1,5 +1,9 @@
 using Danom;
-using SkiaSharp;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats;
 
 namespace Bert;
 
@@ -38,7 +42,7 @@ public static class ImageProcessor {
         ScaleParams param,
         Stream input,
         Stream output) {
-        using var image = SKBitmap.Decode(input);
+        using var image = Image.Load(input);
 
         if (image is null) {
             return Result.Error("Failed to decode input image.");
@@ -54,7 +58,11 @@ public static class ImageProcessor {
             if (scaleByWidth.CropHeight is int cropHeight
                 && cropHeight > 0
                 && cropHeight < scaleByWithDimensions.Height) {
-                cropWindow = Cropper.Crop(CropX.Left, scaleByWidth.CropY, scaleByWithDimensions with { Height = cropHeight }, scaleByWithDimensions);
+                cropWindow = Cropper.Crop(
+                    cropX: CropX.Left,
+                    cropY: scaleByWidth.CropY,
+                    cropDimensions: scaleByWithDimensions with { Height = cropHeight },
+                    dimensions: scaleByWithDimensions);
             }
 
             scaleDimensions = scaleByWithDimensions;
@@ -66,7 +74,11 @@ public static class ImageProcessor {
             if (scaleByHeight.CropWidth is int cropWidth
                 && cropWidth > 0
                 && cropWidth < scaleByHeightDimensions.Width) {
-                cropWindow = Cropper.Crop(scaleByHeight.CropX, CropY.Top, scaleByHeightDimensions with { Width = cropWidth }, scaleByHeightDimensions);
+                cropWindow = Cropper.Crop(
+                    cropX: scaleByHeight.CropX,
+                    cropY: CropY.Top,
+                    cropDimensions: scaleByHeightDimensions with { Width = cropWidth },
+                    dimensions: scaleByHeightDimensions);
             }
 
             scaleDimensions = scaleByHeightDimensions;
@@ -76,34 +88,23 @@ public static class ImageProcessor {
             && (dimensions.Width != image.Width || dimensions.Height != image.Height)) {
             // scale the image using the calculated dimensions
             Console.WriteLine($"\tScaling image from {image.Width}x{image.Height} to {dimensions.Width}x{dimensions.Height}");
-            var scale = new SKImageInfo(dimensions.Width, dimensions.Height);
-            using var scaledImage = image.Resize(scale, new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear));
 
-            if (scaledImage is null) {
-                return Result.Error("Failed to scale image.");
-            }
+            image.Mutate(x =>
+                x.Resize(width: dimensions.Width, height: dimensions.Height, sampler: KnownResamplers.Bicubic));
 
             if (cropWindow is CropWindow crop) {
                 // crop the scaled image
                 Console.WriteLine($"\tCropping image using coordinates (L:{crop.Left}, T:{crop.Top}, R:{crop.Right}, B:{crop.Bottom})");
-                var cropRect = new SKRectI(crop.Left, crop.Top, crop.Right, crop.Bottom);
-                using var croppedImage = new SKBitmap();
-
-                if (!scaledImage.ExtractSubset(croppedImage, cropRect)) {
-                    return Result.Error("Failed to crop image.");
-                }
-
-                croppedImage.Encode(output, GetImageFormat(param.OutputType), (int)param.Quality);
-            }
-            else {
-                // no crop window, just encode the scaled image
-                scaledImage.Encode(output, GetImageFormat(param.OutputType), (int)param.Quality);
+                image.Mutate(x =>
+                    x.Crop(new(
+                        x: crop.Left,
+                        y: crop.Top,
+                        width: crop.Right - crop.Left,
+                        height: crop.Bottom - crop.Top)));
             }
         }
-        else {
-            // no scaling, just encode the original image
-            image.Encode(output, GetImageFormat(param.OutputType), (int)param.Quality);
-        }
+
+        SaveImage(image, output, param.OutputType, param.Quality);
 
         return Result.Ok();
     }
@@ -112,7 +113,7 @@ public static class ImageProcessor {
         CropParams param,
         Stream input,
         Stream output) {
-        using var image = SKBitmap.Decode(input);
+        using var image = Image.Load(input);
 
         if (image is null) {
             return Result.Error("Failed to decode input image.");
@@ -120,24 +121,37 @@ public static class ImageProcessor {
 
         var cropWindow = Cropper.Crop(param.CropX, param.CropY, param.CropDimensions, new(image.Width, image.Height));
         Console.WriteLine($"\tCropping image using coordinates (L:{cropWindow.Left}, T:{cropWindow.Top}, R:{cropWindow.Right}, B:{cropWindow.Bottom})");
-        using var croppedImage = new SKBitmap();
 
-        if (!image.ExtractSubset(croppedImage, new(cropWindow.Left, cropWindow.Top, cropWindow.Right, cropWindow.Bottom))) {
-            return Result.Error("Failed to extract subset from image.");
-        }
+        image.Mutate(x =>
+            x.Crop(new(
+                x: cropWindow.Left,
+                y: cropWindow.Top,
+                width: cropWindow.Right - cropWindow.Left,
+                height: cropWindow.Bottom - cropWindow.Top)));
 
-        using var scaledImage = croppedImage.Resize(
-            new SKImageInfo(param.CropDimensions.Width, param.CropDimensions.Height),
-            new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear));
-
-        scaledImage.Encode(output, GetImageFormat(param.OutputType), (int)param.Quality);
+        SaveImage(image, output, param.OutputType, param.Quality);
 
         return Result.Ok(Unit.Value);
     }
 
-    private static SKEncodedImageFormat GetImageFormat(ImageType type) =>
+    public static void SaveImage(
+        Image image,
+        Stream output,
+        ImageType type,
+        ImageQuality quality = ImageQuality.High) {
+        switch (type) {
+            case ImageType.png:
+                image.SaveAsPng(output, GetImageEncoder(type, quality) as PngEncoder);
+                break;
+            default:
+                image.SaveAsJpeg(output, GetImageEncoder(type, quality) as JpegEncoder);
+                break;
+        }
+    }
+
+    private static ImageEncoder GetImageEncoder(ImageType type, ImageQuality quality) =>
         type switch {
-            ImageType.png => SKEncodedImageFormat.Png,
-            _ => SKEncodedImageFormat.Jpeg
+            ImageType.png => new PngEncoder { CompressionLevel = PngCompressionLevel.BestCompression },
+            _ => new JpegEncoder { Quality = (int)quality }
         };
 }

@@ -43,7 +43,16 @@ jobs:
             --configuration Release \
             --framework net9.0 \
             --runtime ${{ matrix.rid }} \
-            --output ./publish/${{ matrix.rid }}
+            --output ./publish/${{ matrix.rid }} \
+            -p:SelfContained=true \
+            -p:SatelliteResourceLanguages=en-US \
+            -p:PublishNativeAot=true \
+            -p:InvariantGlobalization=true \
+            -p:UseSystemResourceKeys=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:IlcGenerateStackTraceData=true \
+            -p:IlcOptimizationPreference=Speed \
+            -p:IlcFoldIdenticalMethodBodies=true
 
       - name: Upload NativeAOT artifact
         uses: actions/upload-artifact@v4

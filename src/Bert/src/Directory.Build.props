@@ -2,7 +2,6 @@
     <PropertyGroup>
         <SelfContained>true</SelfContained>
         <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
-        <PublishAot>true</PublishAot>
         <PublishSingleFile>true</PublishSingleFile>
         <PublishTrimmed>true</PublishTrimmed>
         <TrimMode>Link</TrimMode>

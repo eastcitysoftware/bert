@@ -36,7 +36,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang zlib1g-dev
 
-      - name: Publish NativeAOT
+      - name: Publish executable
         shell: bash
         run: |
           dotnet publish src/Bert/src/Bert.csproj \
@@ -48,14 +48,14 @@ jobs:
             -p:PublishTrimmed=true \
             -p:TrimMode=Link \
             -p:PublishSingleFile=true \
-            -p:PublishNativeAot=true \
+            -p:EnableCompressionInSingleFile=true \
             -p:SatelliteResourceLanguages=en-US \
             -p:InvariantGlobalization=true \
             -p:IncludeNativeLibrariesForSelfExtract=true \
             -p:IlcOptimizationPreference=Speed \
             -p:IlcFoldIdenticalMethodBodies=true
 
-      - name: Upload NativeAOT artifact
+      - name: Upload executable artifact
         uses: actions/upload-artifact@v4
         with:
           name: bert-${{ matrix.rid }}

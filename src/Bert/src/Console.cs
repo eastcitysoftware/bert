@@ -17,16 +17,25 @@ public static class Print {
         Console.WriteLine();
     }
 
-    public static void Info(string message) {
+    private static void WriteColoredMessage(string message, ConsoleColor color) {
+        var originalColor = Console.BackgroundColor;
+        Console.BackgroundColor = color;
+        Console.Write(message);
+        Console.BackgroundColor = originalColor;
+    }
+
+    public static void Info(string message)
+    {
         Console.WriteLine(message);
     }
 
     public static void Block(string message) {
         int boxWidth = message.Length + 4;
+        var border = new string('═', boxWidth - 2);
         Console.WriteLine();
-        Console.WriteLine($"╔═{new string('═', boxWidth - 2)}═╗");
+        Console.WriteLine($"╔═{border}═╗");
         Console.WriteLine($"║ {message}{new string(' ', boxWidth - message.Length - 1)}║");
-        Console.WriteLine($"╚═{new string('═', boxWidth - 2)}═╝");
+        Console.WriteLine($"╚═{border}═╝");
     }
 
     public static void ResultsTable(IEnumerable<Result<ImageProcessingOutput, ImageProcessingError>> results) {
@@ -59,12 +68,5 @@ public static class Print {
         }
 
         Console.WriteLine(new string('=', nameColWidth + 40));
-    }
-
-    private static void WriteColoredMessage(string message, ConsoleColor color) {
-        var originalColor = Console.BackgroundColor;
-        Console.BackgroundColor = color;
-        Console.Write(message);
-        Console.BackgroundColor = originalColor;
     }
 }

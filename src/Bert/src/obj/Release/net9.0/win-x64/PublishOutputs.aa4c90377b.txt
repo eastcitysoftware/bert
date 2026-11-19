@@ -1,2 +1,0 @@
-C:\Users\pim\git_eastcitysoftware\bert\src\Bert\src\bin\Release\net9.0\win-x64\publish\bert.pdb
-C:\Users\pim\git_eastcitysoftware\bert\src\Bert\src\bin\Release\net9.0\win-x64\publish\bert.exe

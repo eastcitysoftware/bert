@@ -1,0 +1,2 @@
+C:\Users\pim\downloads\bert-win-x64\bert.pdb
+C:\Users\pim\downloads\bert-win-x64\bert.exe

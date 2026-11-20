@@ -3,6 +3,7 @@
 *.dll
 *.so
 *.dylib
+[Ds]ist/
 
 # Test binary, build output
 *.test

@@ -8,22 +8,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dotnet-version: ['9.0.x']
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
-        uses: actions/setup-dotnet@v3
+      - name: Setup golang
+        uses: actions/setup-go@v4
         with:
-          dotnet-version: ${{ matrix.dotnet-version }}
+          go-version: 1.26.0
 
-      - name: Install solution dependencies
-        run: |
-          dotnet restore Bert.sln --force-evaluate --no-http-cache --force
-
-      - name: Test Core
-        run: |
-          dotnet build src/Bert/src -c Release
-          dotnet test src/Bert/test -c Release
+      - name: Test scale
+        run: go test ./internal/bert

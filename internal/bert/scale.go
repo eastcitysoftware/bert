@@ -8,45 +8,45 @@ import (
 	"golang.org/x/image/draw"
 )
 
-type ScaleToWidth struct {
+type scaleToWidth struct {
 	Dimensions
-	OutputType string // jpg, png, webp
-	Quality    string // full, high, medium, low
-	CropY      string // top, bottom, center
+	outputType string // jpg, png, webp
+	quality    string // full, high, medium, low
+	cropY      string // top, bottom, center
 }
 
-type ScaleToHeight struct {
+type scaleToHeight struct {
 	Dimensions
-	OutputType string // jpg, png, webp
-	Quality    string // full, high, medium, low
-	CropX      string // left, right, center
+	outputType string // jpg, png, webp
+	quality    string // full, high, medium, low
+	cropX      string // left, right, center
 }
 
-func TransformToWidth(transform Transform) ScaleToWidth {
-	return ScaleToWidth{
+func transformToWidth(transform Transform) scaleToWidth {
+	return scaleToWidth{
 		Dimensions: transform.Dimensions,
-		OutputType: transform.OutputType,
-		Quality:    transform.Quality,
-		CropY:      transform.CropY,
+		outputType: transform.OutputType,
+		quality:    transform.Quality,
+		cropY:      transform.CropY,
 	}
 }
 
-func TransformToHeight(transform Transform) ScaleToHeight {
-	return ScaleToHeight{
+func transformToHeight(transform Transform) scaleToHeight {
+	return scaleToHeight{
 		Dimensions: transform.Dimensions,
-		OutputType: transform.OutputType,
-		Quality:    transform.Quality,
-		CropX:      transform.CropX,
+		outputType: transform.OutputType,
+		quality:    transform.Quality,
+		cropX:      transform.CropX,
 	}
 }
 
-func (scale ScaleToWidth) Transform(src ImageTransform) result.Result[ProcessedImage, error] {
-	scaleDim := getScale(scale.Dimensions, GetDimensions(src.Image))
+func (scale scaleToWidth) transform(src imageTransform) result.Result[processedImage, error] {
+	scaleDim := getScale(scale.Dimensions, getDimensions(src.image))
 	return src.scaleTo(scaleDim)
 }
 
-func (scale ScaleToHeight) Transform(src ImageTransform) result.Result[ProcessedImage, error] {
-	scaleDim := getScale(scale.Dimensions, GetDimensions(src.Image))
+func (scale scaleToHeight) transform(src imageTransform) result.Result[processedImage, error] {
+	scaleDim := getScale(scale.Dimensions, getDimensions(src.image))
 	return src.scaleTo(scaleDim)
 }
 
@@ -65,20 +65,22 @@ func getScale(dim Dimensions, srcDim Dimensions) Dimensions {
 		Height: scaleToHeight}
 }
 
-func (src ImageTransform) scaleTo(toDim Dimensions) result.Result[ProcessedImage, error] {
+func (src imageTransform) scaleTo(toDim Dimensions) result.Result[processedImage, error] {
 	scale := image.Rect(0, 0, toDim.Width, toDim.Height)
 	scaledImage := image.NewRGBA(scale)
 
 	draw.ApproxBiLinear.Scale(
 		scaledImage,
 		scaledImage.Rect,
-		src.Image,
-		src.Image.Bounds(),
+		src.image,
+		src.image.Bounds(),
 		draw.Over,
 		nil)
 
-	return result.Ok[error](ProcessedImage{
-		Image:     scaledImage,
-		Name:      src.Name,
-		Transform: src.Transform})
+
+
+	return result.Ok[error](processedImage{
+		image:     scaledImage,
+		name:      src.name,
+		transform: src.transform})
 }

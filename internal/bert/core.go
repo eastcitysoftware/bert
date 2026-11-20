@@ -1,11 +1,9 @@
 package bert
 
 import (
+	"fmt"
 	"image"
-	img "image"
 	"io"
-	"path/filepath"
-	"strings"
 
 	"github.com/eastcitysoftware/danom/option"
 	"github.com/eastcitysoftware/danom/result"
@@ -55,52 +53,55 @@ type Crop struct {
 	CropY string // top, bottom, center
 }
 
-type CropWindow struct {
-	Left, Top, Right, Bottom int
-	Dimensions
+type unprocessedImage struct {
+	source func() ImageReader
+	name   string
 }
 
-type UnprocessedImage struct {
-	Source io.Reader
-	Name   string
-	// OutputType string // jpg, png
+type imageTransform struct {
+	image     image.Image
+	name      string
+	transform Transform
 }
 
-type ImageTransform struct {
-	Image     img.Image
-	Name      string
-	Transform Transform
+type processedImage struct {
+	image      image.Image
+	name       string
+	dimensions Dimensions
+	transform  Transform
 }
 
-type ProcessedImage struct {
-	Image     img.Image
-	Name      string
-	Transform Transform
+type unit struct{}
+
+type ImageReader interface {
+	io.Reader
+	io.Closer
 }
 
 type ImageSource interface {
-	Next() option.Option[UnprocessedImage]
+	Next() option.Option[unprocessedImage]
 }
 
 type OutputHandler interface {
-	Handle(ProcessedImage) option.Option[error]
+	Handle(processedImage) result.Result[unit, error]
 }
 
-type ImageTransformer interface {
-	Transform(ImageTransform) result.Result[ProcessedImage, error]
+type imageTransformer interface {
+	transform(imageTransform) result.Result[processedImage, error]
 }
 
-// Check if the file is an image by checking the file extension
-func IsImage(path string) bool {
-	switch strings.ToLower(filepath.Ext(path)) {
-	case JpgExtension, JpegExtension, PngExtension, WebpExtension:
-		return true
-	default:
-		return false
-	}
-}
-
-func GetDimensions(img image.Image) Dimensions {
+func getDimensions(img image.Image) Dimensions {
 	bnds := img.Bounds()
 	return Dimensions{Width: bnds.Dx(), Height: bnds.Dy()}
+}
+
+func (d Dimensions) String() string {
+	switch {
+	case d.Height > 0 && d.Width > 0:
+		return fmt.Sprintf("%dW x %dH", d.Width, d.Height)
+	case d.Height > 0:
+		return fmt.Sprintf("Auto x %dH", d.Height)
+	default:
+		return fmt.Sprintf("%dW x Auto", d.Width)
+	}
 }

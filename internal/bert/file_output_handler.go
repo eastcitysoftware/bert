@@ -7,12 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/eastcitysoftware/danom/option"
 	"github.com/eastcitysoftware/danom/result"
 )
 
-type FileOutputHandler struct {
-	OutputPath string
+type fileOutputHandler struct {
+	outputPath string
 }
 
 func NewFileOutputHandler(outputPath string) result.Result[OutputHandler, error] {
@@ -21,26 +20,26 @@ func NewFileOutputHandler(outputPath string) result.Result[OutputHandler, error]
 			if !f.IsDir() {
 				return result.Error[OutputHandler](fmt.Errorf("Output path must be a directory"))
 			}
-			return result.Ok[error, OutputHandler](&FileOutputHandler{outputPath})
+			return result.Ok[error, OutputHandler](&fileOutputHandler{outputPath})
 		})
 }
 
-func (out *FileOutputHandler) Handle(img ProcessedImage) option.Option[error] {
-	outputPath := filepath.Join(out.OutputPath, img.Name)
+func (out *fileOutputHandler) Handle(img processedImage) result.Result[unit, error] {
+	outputPath := filepath.Join(out.outputPath, img.name)
 
 	transformed, err := os.Create(outputPath)
 	if err != nil {
-		return option.Some(fmt.Errorf("failed to create resize file: %v", err))
+		return result.Error[unit](fmt.Errorf("failed to create resize file: %v", err))
 	}
 	defer transformed.Close()
 
-	switch img.Transform.OutputType {
+	switch img.transform.OutputType {
 	case PngOutputType:
-		png.Encode(transformed, img.Image)
+		png.Encode(transformed, img.image)
 	default:
-		jpeg.Encode(transformed, img.Image, &jpeg.Options{Quality: img.Transform.GetJpegQuality()})
+		jpeg.Encode(transformed, img.image, &jpeg.Options{Quality: img.transform.GetJpegQuality()})
 	}
-	return option.None[error]()
+	return result.Ok[error](unit{})
 }
 
 func (t Transform) GetJpegQuality() int {

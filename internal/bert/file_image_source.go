@@ -5,63 +5,56 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/eastcitysoftware/danom/option"
 	"github.com/eastcitysoftware/danom/result"
 )
 
-type FileImageSource struct {
-	OutputType     string
-	FilePaths      []string
-	ProcessedPaths []string
+type fileImageSource struct {
+	outputType     string
+	filePaths      []string
+	processedPaths []string
 }
 
 func NewFileImageSource(inputPath string, outputType string) result.Result[ImageSource, error] {
 	switch outputType {
 	case JpgOutputType, PngOutputType:
 		return result.Map(getImages(inputPath), func(files []string) ImageSource {
-			return &FileImageSource{FilePaths: files}
+			return &fileImageSource{filePaths: files}
 		})
 	default:
 		return result.Error[ImageSource](fmt.Errorf("Invalid output type, must be one of: %s, %s", JpgOutputType, PngOutputType))
 	}
 }
 
-func (src *FileImageSource) Next() option.Option[UnprocessedImage] {
-	if len(src.FilePaths) == len(src.ProcessedPaths) {
-		return option.None[UnprocessedImage]()
+func (src *fileImageSource) Next() option.Option[unprocessedImage] {
+	if len(src.filePaths) == len(src.processedPaths) {
+		return option.None[unprocessedImage]()
 	}
 
-	for _, f := range src.FilePaths {
-		if slices.Contains(src.ProcessedPaths, f) {
+	for _, f := range src.filePaths {
+		if slices.Contains(src.processedPaths, f) {
 			continue
 		}
 
-		src.ProcessedPaths = append(src.ProcessedPaths, f)
-		return getUnprocessedImage(f, src.OutputType)
+		src.processedPaths = append(src.processedPaths, f)
+		return getUnprocessedImage(f, src.outputType)
 	}
-	return option.None[UnprocessedImage]()
+	return option.None[unprocessedImage]()
 }
 
-func getUnprocessedImage(inputPath, outputType string) option.Option[UnprocessedImage] {
-	r, err := os.Open(inputPath)
+func getUnprocessedImage(inputPath, outputType string) option.Option[unprocessedImage] {
+	_, err := os.Stat(inputPath)
+
 	if err != nil {
-		return option.None[UnprocessedImage]()
+		return option.None[unprocessedImage]()
 	}
-	name := filepath.Base(inputPath)
-	return option.Some(UnprocessedImage{
-		Source: r,
-		Name:   name}) //,
-	// OutputType: outputType})
-}
 
-// func getOutputType(inputPath string) string {
-// 	switch filepath.Ext(inputPath) {
-// 	case JpegExtension, JpgExtension:
-// 		return JpgOutputType
-// 	case PngExtension
-// 	}
-// }
+	return option.Some(unprocessedImage{
+		source: func() ImageReader { return newFileImageReader(inputPath) },
+		name:   filepath.Base(inputPath)})
+}
 
 func getImages(inputPath string) result.Result[[]string, error] {
 	inputStat, err := os.Stat(inputPath)
@@ -77,15 +70,25 @@ func getImages(inputPath string) result.Result[[]string, error] {
 		}
 		for _, file := range dirFiles {
 			inputPath := filepath.Join(inputPath, file.Name())
-			if IsImage(inputPath) {
+			if isImage(inputPath) {
 				files = append(files, inputPath)
 			}
 		}
 	} else {
-		if IsImage(inputPath) {
+		if isImage(inputPath) {
 			files = []string{inputPath}
 		}
 	}
 
 	return result.Ok[error](files)
+}
+
+// Check if the file is an image by checking the file extension
+func isImage(path string) bool {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case JpgExtension, JpegExtension, PngExtension, WebpExtension:
+		return true
+	default:
+		return false
+	}
 }

@@ -7,6 +7,8 @@ import (
 	"image/jpeg"
 	"image/png"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/eastcitysoftware/danom/check"
 	"github.com/eastcitysoftware/danom/result"
@@ -19,10 +21,19 @@ type TransformOptions struct {
 	Transform
 }
 
-type TransformResult struct{}
+type TransformResult struct {
+	Transform
+	Duration time.Duration
+	Results  []ImageTransformResult
+}
+
+type ImageTransformResult struct {
+	Name       string
+	Dimensions Dimensions
+}
 
 func RunTransform(opts TransformOptions) result.Result[TransformResult, error] {
-	validator := NewTransformValidator()
+	validator := newTransformValidator()
 	validation := validator.Validate(opts.Transform)
 
 	if e, isErr := validation.ErrorValue(); isErr {
@@ -35,6 +46,9 @@ func RunTransform(opts TransformOptions) result.Result[TransformResult, error] {
 		return result.Error[TransformResult](fmt.Errorf("Invalid transform provided"))
 	}
 
+	startTime := time.Now()
+
+	var results []ImageTransformResult
 	var transformErrors []error
 	for {
 		nextImg := opts.ImageSource.Next()
@@ -42,29 +56,34 @@ func RunTransform(opts TransformOptions) result.Result[TransformResult, error] {
 		if nextImg.IsNone() {
 			break
 		}
-		var transformer ImageTransformer
+		var transformer imageTransformer
 
 		switch {
 		case opts.Mode == TransformModeScale && opts.Width > 0 && opts.Height <= 0:
-			transformer = TransformToWidth(transform)
+			transformer = transformToWidth(transform)
 		case opts.Mode == TransformModeScale && opts.Height > 0:
-			transformer = TransformToHeight(transform)
+			transformer = transformToHeight(transform)
 		case opts.Mode == TransformModeCrop:
-			transformer = TransformToDimensions(transform)
+			transformer = transformToDimensions(transform)
 
 		default:
 			return result.Error[TransformResult](fmt.Errorf("unsupported transform"))
 		}
 
 		unprImg, _ := nextImg.Value()
-		imgTransform := result.Map(unprImg.Decode(), func(i image.Image) ImageTransform {
-			return opts.NewImageTransform(unprImg.Name, i)
+		imgTransform := result.Map(unprImg.decode(), func(i image.Image) imageTransform {
+			return opts.newImageTransform(unprImg.name, i)
 		})
 
-		result.Bind(imgTransform, transformer.Transform).Do(
-			func(i ProcessedImage) {
-				opts.OutputHandler.Handle(i).Iter(func(err error) {
+		result.Bind(imgTransform, transformer.transform).Do(
+			func(i processedImage) {
+				opts.OutputHandler.Handle(i).IterError(func(err error) {
 					transformErrors = append(transformErrors, err)
+				})
+
+				results = append(results, ImageTransformResult{
+					Name:       i.name,
+					Dimensions: i.dimensions,
 				})
 			},
 			func(e error) {
@@ -76,10 +95,13 @@ func RunTransform(opts TransformOptions) result.Result[TransformResult, error] {
 		return result.Error[TransformResult](errors.Join(transformErrors...))
 	}
 
-	return result.Ok[error](TransformResult{})
+	return result.Ok[error](TransformResult{
+		Transform: transform,
+		Duration:  time.Since(startTime),
+		Results:   results})
 }
 
-func NewTransformValidator() check.Validator[Transform] {
+func newTransformValidator() check.Validator[Transform] {
 	return check.NewValidator(
 		check.NewRule("Mode", func(x Transform) string { return x.Mode },
 			strAnyOf(TransformModeScale, TransformModeCrop)),
@@ -88,13 +110,13 @@ func NewTransformValidator() check.Validator[Transform] {
 		check.NewRule("Quality", func(x Transform) string { return x.Quality },
 			strAnyOf(FullQuality, HighQuality, MediumQuality, LowQuality)),
 		validateUsing("Dimensions", func(x Transform) Dimensions { return x.Dimensions },
-			NewDimensionsValidator()),
+			newDimensionsValidator()),
 		validateUsing("Crop", func(x Transform) Crop { return x.Crop },
-			NewCropValidator()),
+			newCropValidator()),
 	)
 }
 
-func NewDimensionsValidator() check.Validator[Dimensions] {
+func newDimensionsValidator() check.Validator[Dimensions] {
 	return check.NewValidator(
 		check.NewRule("Dimensions", func(x Dimensions) Dimensions { return x },
 			check.NewFact(func(x Dimensions) bool { return x.Width > 0 || x.Height > 0 },
@@ -102,7 +124,7 @@ func NewDimensionsValidator() check.Validator[Dimensions] {
 	)
 }
 
-func NewCropValidator() check.Validator[Crop] {
+func newCropValidator() check.Validator[Crop] {
 	return check.NewValidator(
 		check.NewRule("CropX", func(x Crop) string { return x.CropX },
 			strAnyOf(CropXCenter, CropXLeft, CropXRight)),
@@ -137,22 +159,36 @@ func strAnyOf(vals ...string) check.Fact[string] {
 	return check.AnyOf(facts...)
 }
 
-func (t Transform) NewImageTransform(name string, i image.Image) ImageTransform {
-	return ImageTransform{Image: i, Name: name, Transform: t}
+func (t Transform) newImageTransform(name string, i image.Image) imageTransform {
+	newName := strings.Replace(name, filepath.Ext(name), "", 1)
+	switch t.OutputType {
+	case PngOutputType:
+		newName += PngExtension
+	default:
+		newName += JpgExtension
+	}
+
+	return imageTransform{
+		image:     i,
+		name:      newName,
+		transform: t}
 }
 
-func (unprocessed UnprocessedImage) Decode() result.Result[image.Image, error] {
+func (unprocessed unprocessedImage) decode() result.Result[image.Image, error] {
+	rd := unprocessed.source()
+	defer rd.Close()
+
 	var src image.Image
 	var err error
-	ext := filepath.Ext(unprocessed.Name)
+	ext := filepath.Ext(unprocessed.name)
 
 	switch ext {
 	case JpgExtension, JpegExtension:
-		src, err = jpeg.Decode(unprocessed.Source)
+		src, err = jpeg.Decode(rd)
 	case PngExtension:
-		src, err = png.Decode(unprocessed.Source)
+		src, err = png.Decode(rd)
 	case WebpExtension:
-		src, err = webp.Decode(unprocessed.Source)
+		src, err = webp.Decode(rd)
 	default:
 		src, err = nil, fmt.Errorf("unsupported image format: %s", ext)
 	}

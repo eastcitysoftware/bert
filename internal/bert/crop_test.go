@@ -11,14 +11,14 @@ func TestGetCropWindow(t *testing.T) {
 		crop     Crop
 		dim      Dimensions
 		srcDim   Dimensions
-		expected CropWindow
+		expected cropWindow
 	}{
 		"left/top": {
 			crop:   Crop{CropX: CropXLeft, CropY: CropYTop},
 			dim:    Dimensions{Width: 200, Height: 100},
 			srcDim: Dimensions{Width: 400, Height: 300},
-			expected: CropWindow{
-				Left: 0, Top: 0, Right: 200, Bottom: 100,
+			expected: cropWindow{
+				left: 0, top: 0, right: 200, bottom: 100,
 				Dimensions: Dimensions{Width: 200, Height: 100},
 			},
 		},
@@ -26,8 +26,8 @@ func TestGetCropWindow(t *testing.T) {
 			crop:   Crop{CropX: CropXCenter, CropY: CropYTop},
 			dim:    Dimensions{Width: 200, Height: 100},
 			srcDim: Dimensions{Width: 400, Height: 300},
-			expected: CropWindow{
-				Left: 100, Top: 0, Right: 300, Bottom: 100,
+			expected: cropWindow{
+				left: 100, top: 0, right: 300, bottom: 100,
 				Dimensions: Dimensions{Width: 200, Height: 100},
 			},
 		},
@@ -35,8 +35,8 @@ func TestGetCropWindow(t *testing.T) {
 			crop:   Crop{CropX: CropXRight, CropY: CropYTop},
 			dim:    Dimensions{Width: 200, Height: 100},
 			srcDim: Dimensions{Width: 400, Height: 300},
-			expected: CropWindow{
-				Left: 200, Top: 0, Right: 400, Bottom: 100,
+			expected: cropWindow{
+				left: 200, top: 0, right: 400, bottom: 100,
 				Dimensions: Dimensions{Width: 200, Height: 100},
 			},
 		},
@@ -44,8 +44,8 @@ func TestGetCropWindow(t *testing.T) {
 			crop:   Crop{CropX: CropXLeft, CropY: CropYCenter},
 			dim:    Dimensions{Width: 200, Height: 100},
 			srcDim: Dimensions{Width: 400, Height: 300},
-			expected: CropWindow{
-				Left: 0, Top: 100, Right: 200, Bottom: 200,
+			expected: cropWindow{
+				left: 0, top: 100, right: 200, bottom: 200,
 				Dimensions: Dimensions{Width: 200, Height: 100},
 			},
 		},
@@ -53,8 +53,8 @@ func TestGetCropWindow(t *testing.T) {
 			crop:   Crop{CropX: CropXCenter, CropY: CropYCenter},
 			dim:    Dimensions{Width: 200, Height: 100},
 			srcDim: Dimensions{Width: 400, Height: 300},
-			expected: CropWindow{
-				Left: 100, Top: 100, Right: 300, Bottom: 200,
+			expected: cropWindow{
+				left: 100, top: 100, right: 300, bottom: 200,
 				Dimensions: Dimensions{Width: 200, Height: 100},
 			},
 		},
@@ -62,8 +62,8 @@ func TestGetCropWindow(t *testing.T) {
 			crop:   Crop{CropX: CropXRight, CropY: CropYCenter},
 			dim:    Dimensions{Width: 200, Height: 100},
 			srcDim: Dimensions{Width: 400, Height: 300},
-			expected: CropWindow{
-				Left: 200, Top: 100, Right: 400, Bottom: 200,
+			expected: cropWindow{
+				left: 200, top: 100, right: 400, bottom: 200,
 				Dimensions: Dimensions{Width: 200, Height: 100},
 			},
 		},
@@ -71,8 +71,8 @@ func TestGetCropWindow(t *testing.T) {
 			crop:   Crop{CropX: CropXLeft, CropY: CropYBottom},
 			dim:    Dimensions{Width: 200, Height: 100},
 			srcDim: Dimensions{Width: 400, Height: 300},
-			expected: CropWindow{
-				Left: 0, Top: 200, Right: 200, Bottom: 300,
+			expected: cropWindow{
+				left: 0, top: 200, right: 200, bottom: 300,
 				Dimensions: Dimensions{Width: 200, Height: 100},
 			},
 		},
@@ -80,8 +80,8 @@ func TestGetCropWindow(t *testing.T) {
 			crop:   Crop{CropX: CropXCenter, CropY: CropYBottom},
 			dim:    Dimensions{Width: 200, Height: 100},
 			srcDim: Dimensions{Width: 400, Height: 300},
-			expected: CropWindow{
-				Left: 100, Top: 200, Right: 300, Bottom: 300,
+			expected: cropWindow{
+				left: 100, top: 200, right: 300, bottom: 300,
 				Dimensions: Dimensions{Width: 200, Height: 100},
 			},
 		},
@@ -89,8 +89,8 @@ func TestGetCropWindow(t *testing.T) {
 			crop:   Crop{CropX: CropXRight, CropY: CropYBottom},
 			dim:    Dimensions{Width: 200, Height: 100},
 			srcDim: Dimensions{Width: 400, Height: 300},
-			expected: CropWindow{
-				Left: 200, Top: 200, Right: 400, Bottom: 300,
+			expected: cropWindow{
+				left: 200, top: 200, right: 400, bottom: 300,
 				Dimensions: Dimensions{Width: 200, Height: 100},
 			},
 		},
@@ -118,8 +118,8 @@ func TestImageTransformCropTo(t *testing.T) {
 		srcImage.SetRGBA(point.X, point.Y, c)
 	}
 
-	got, ok := (ImageTransform{Image: srcImage, Name: "test.png"}).cropTo(CropWindow{
-		Left: 1, Top: 1, Right: 3, Bottom: 3,
+	got, ok := (imageTransform{image: srcImage, name: "test.png"}).cropTo(cropWindow{
+		left: 1, top: 1, right: 3, bottom: 3,
 		Dimensions: Dimensions{Width: 2, Height: 2},
 	}).Value()
 	if !ok {
@@ -127,8 +127,8 @@ func TestImageTransformCropTo(t *testing.T) {
 	}
 
 	wantBounds := image.Rect(1, 1, 3, 3)
-	if got.Image.Bounds() != wantBounds {
-		t.Fatalf("cropTo() bounds = %v, want %v", got.Image.Bounds(), wantBounds)
+	if got.image.Bounds() != wantBounds {
+		t.Fatalf("cropTo() bounds = %v, want %v", got.image.Bounds(), wantBounds)
 	}
 
 	tests := map[string]struct {
@@ -143,7 +143,7 @@ func TestImageTransformCropTo(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			gotR, gotG, gotB, gotA := got.Image.At(test.point.X, test.point.Y).RGBA()
+			gotR, gotG, gotB, gotA := got.image.At(test.point.X, test.point.Y).RGBA()
 			wantR, wantG, wantB, wantA := test.want.RGBA()
 			if gotR != wantR || gotG != wantG || gotB != wantB || gotA != wantA {
 				t.Errorf("pixel at %v = (%d, %d, %d, %d), want (%d, %d, %d, %d)",
@@ -187,19 +187,19 @@ func TestCropToDimensionsTransform(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			src := ImageTransform{
-				Image: srcImage,
-				Name:  "test.png",
-				Transform: Transform{
+			src := imageTransform{
+				image: srcImage,
+				name:  "test.png",
+				transform: Transform{
 					Dimensions: Dimensions{Width: cropWidth, Height: cropHeight},
 				},
 			}
-			crop := CropToDimensions{
+			crop := cropToDimensions{
 				Dimensions: Dimensions{Width: cropWidth, Height: cropHeight},
 				Crop:       test.crop,
 			}
 
-			got, ok := crop.Transform(src).Value()
+			got, ok := crop.transform(src).Value()
 			if !ok {
 				t.Fatal("Transform() returned an error")
 			}
@@ -210,15 +210,15 @@ func TestCropToDimensionsTransform(t *testing.T) {
 				test.wantLeft+cropWidth,
 				test.wantTop+cropHeight,
 			)
-			if got.Image.Bounds() != wantBounds {
-				t.Fatalf("Transform() bounds = %v, want %v", got.Image.Bounds(), wantBounds)
+			if got.image.Bounds() != wantBounds {
+				t.Fatalf("Transform() bounds = %v, want %v", got.image.Bounds(), wantBounds)
 			}
 
 			for y := wantBounds.Min.Y; y < wantBounds.Max.Y; y++ {
 				for x := wantBounds.Min.X; x < wantBounds.Max.X; x++ {
-					if got.Image.At(x, y) != srcImage.At(x, y) {
+					if got.image.At(x, y) != srcImage.At(x, y) {
 						t.Errorf("pixel at (%d, %d) = %v, want %v",
-							x, y, got.Image.At(x, y), srcImage.At(x, y))
+							x, y, got.image.At(x, y), srcImage.At(x, y))
 					}
 				}
 			}

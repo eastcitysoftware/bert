@@ -34,3 +34,21 @@ func TestEnsureOutputPath(t *testing.T) {
 		}
 	})
 }
+
+func TestFlagArgsProvidePositionalPaths(t *testing.T) {
+	inputPath := ""
+	outputPath := ""
+	positionalArgs := []string{
+		`C:\input`,
+		`C:\output`,
+	}
+
+	applyPositionalPaths(&inputPath, &outputPath, positionalArgs)
+
+	if inputPath != positionalArgs[0] {
+		t.Errorf("input path = %q, want %q", inputPath, positionalArgs[0])
+	}
+	if outputPath != positionalArgs[1] {
+		t.Errorf("output path = %q, want %q", outputPath, positionalArgs[1])
+	}
+}

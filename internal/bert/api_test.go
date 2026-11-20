@@ -20,7 +20,7 @@ func TestTransformValidator(t *testing.T) {
 		"valid":   {Transform{TransformModeScale, PngOutputType, HighQuality, Dimensions{200, 200}, Crop{CropXCenter, CropYCenter}}, true},
 	}
 
-	validator := NewTransformValidator()
+	validator := newTransformValidator()
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			if validator.Validate(test.transform).IsOk() != test.isOk {
@@ -43,7 +43,7 @@ func TestDimensionsValidator(t *testing.T) {
 		"valid":     {Dimensions{200, 200}, true},
 	}
 
-	validator := NewDimensionsValidator()
+	validator := newDimensionsValidator()
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			if validator.Validate(test.crop).IsOk() != test.isOk {
@@ -69,7 +69,7 @@ func TestCropValidator(t *testing.T) {
 		"right/bottom":  {Crop{CropXRight, CropYBottom}, true},
 	}
 
-	validator := NewCropValidator()
+	validator := newCropValidator()
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			if validator.Validate(test.crop).IsOk() != test.isOk {
@@ -111,10 +111,10 @@ func TestUnprocessedImageDecode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok := (UnprocessedImage{
-				Source: bytes.NewReader(tt.source),
-				Name:   tt.name,
-			}).Decode().Value()
+			got, ok := (unprocessedImage{
+				source: func() ImageReader { return newBytesImageReader(tt.source) },
+				name:   tt.name,
+			}).decode().Value()
 			if !ok {
 				t.Fatal("Decode() returned an error")
 			}
@@ -148,10 +148,10 @@ func TestUnprocessedImageDecodeErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err, ok := (UnprocessedImage{
-				Source: bytes.NewReader(tt.source),
-				Name:   tt.name,
-			}).Decode().ErrorValue()
+			err, ok := (unprocessedImage{
+				source: func() ImageReader { return newBytesImageReader(tt.source) },
+				name:   tt.name,
+			}).decode().ErrorValue()
 			if !ok {
 				t.Fatal("Decode() did not return an error")
 			}

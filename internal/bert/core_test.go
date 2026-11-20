@@ -15,35 +15,12 @@ func TestTransformNewImageTransform(t *testing.T) {
 		Crop:       Crop{CropX: CropXCenter, CropY: CropYBottom},
 	}
 
-	got := transform.NewImageTransform("test.png", img)
+	got := transform.newImageTransform("test.png", img)
 
-	if got.Image != img {
+	if got.image != img {
 		t.Fatal("NewImageTransform() did not preserve the image")
 	}
-	if got.Transform != transform {
-		t.Errorf("NewImageTransform() transform = %#v, want %#v", got.Transform, transform)
-	}
-}
-
-func TestIsImage(t *testing.T) {
-	if IsImage("some-file.txt") {
-		t.Errorf("IsImage() should be false for .txt")
-	}
-
-	tests := map[string]struct {
-		Extension string
-	}{
-		JpgExtension:  {Extension: JpgExtension},
-		JpegExtension: {Extension: JpegExtension},
-		PngExtension:  {Extension: PngExtension},
-		WebpExtension: {Extension: WebpExtension},
-	}
-
-	for testName, test := range tests {
-		t.Run(testName, func(t *testing.T) {
-			if !IsImage("some-file" + test.Extension) {
-				t.Errorf("IsImage() should be true for %s", test.Extension)
-			}
-		})
+	if got.transform != transform {
+		t.Errorf("NewImageTransform() transform = %#v, want %#v", got.transform, transform)
 	}
 }

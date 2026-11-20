@@ -52,23 +52,23 @@ func TestImageTransformScaleTo(t *testing.T) {
 		}
 	}
 
-	got, ok := (ImageTransform{
-		Image: srcImage,
-		Name:  "test.png",
+	got, ok := (imageTransform{
+		image: srcImage,
+		name:  "test.png",
 	}).scaleTo(Dimensions{Width: 4, Height: 3}).Value()
 	if !ok {
 		t.Fatal("scaleTo() returned an error")
 	}
 
 	wantBounds := image.Rect(0, 0, 4, 3)
-	if got.Image.Bounds() != wantBounds {
-		t.Fatalf("scaleTo() bounds = %v, want %v", got.Image.Bounds(), wantBounds)
+	if got.image.Bounds() != wantBounds {
+		t.Fatalf("scaleTo() bounds = %v, want %v", got.image.Bounds(), wantBounds)
 	}
 
 	wantR, wantG, wantB, wantA := srcColor.RGBA()
 	for y := wantBounds.Min.Y; y < wantBounds.Max.Y; y++ {
 		for x := wantBounds.Min.X; x < wantBounds.Max.X; x++ {
-			gotR, gotG, gotB, gotA := got.Image.At(x, y).RGBA()
+			gotR, gotG, gotB, gotA := got.image.At(x, y).RGBA()
 			if gotR != wantR || gotG != wantG || gotB != wantB || gotA != wantA {
 				t.Errorf("pixel at (%d, %d) = (%d, %d, %d, %d), want (%d, %d, %d, %d)",
 					x, y, gotR, gotG, gotB, gotA,
@@ -80,19 +80,19 @@ func TestImageTransformScaleTo(t *testing.T) {
 
 func TestScaleToWidthTransform(t *testing.T) {
 	testScaleTransform(t,
-		ScaleToWidth{Dimensions: Dimensions{Width: 8}},
+		scaleToWidth{Dimensions: Dimensions{Width: 8}},
 		Dimensions{Width: 8, Height: 4},
 	)
 }
 
 func TestScaleToHeightTransform(t *testing.T) {
 	testScaleTransform(t,
-		ScaleToHeight{Dimensions: Dimensions{Height: 4}},
+		scaleToHeight{Dimensions: Dimensions{Height: 4}},
 		Dimensions{Width: 8, Height: 4},
 	)
 }
 
-func testScaleTransform(t *testing.T, transformer ImageTransformer, want Dimensions) {
+func testScaleTransform(t *testing.T, transformer imageTransformer, want Dimensions) {
 	t.Helper()
 
 	srcImage := image.NewRGBA(image.Rect(0, 0, 4, 2))
@@ -103,23 +103,23 @@ func testScaleTransform(t *testing.T, transformer ImageTransformer, want Dimensi
 		}
 	}
 
-	got, ok := transformer.Transform(ImageTransform{
-		Image: srcImage,
-		Name:  "test.png",
+	got, ok := transformer.transform(imageTransform{
+		image: srcImage,
+		name:  "test.png",
 	}).Value()
 	if !ok {
 		t.Fatal("Transform() returned an error")
 	}
 
 	wantBounds := image.Rect(0, 0, want.Width, want.Height)
-	if got.Image.Bounds() != wantBounds {
-		t.Fatalf("Transform() bounds = %v, want %v", got.Image.Bounds(), wantBounds)
+	if got.image.Bounds() != wantBounds {
+		t.Fatalf("Transform() bounds = %v, want %v", got.image.Bounds(), wantBounds)
 	}
 
 	wantR, wantG, wantB, wantA := srcColor.RGBA()
 	for y := wantBounds.Min.Y; y < wantBounds.Max.Y; y++ {
 		for x := wantBounds.Min.X; x < wantBounds.Max.X; x++ {
-			gotR, gotG, gotB, gotA := got.Image.At(x, y).RGBA()
+			gotR, gotG, gotB, gotA := got.image.At(x, y).RGBA()
 			if gotR != wantR || gotG != wantG || gotB != wantB || gotA != wantA {
 				t.Errorf("pixel at (%d, %d) = (%d, %d, %d, %d), want (%d, %d, %d, %d)",
 					x, y, gotR, gotG, gotB, gotA,

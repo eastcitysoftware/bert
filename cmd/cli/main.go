@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/eastcitysoftware/bert/internal/bert"
 )
@@ -15,12 +16,15 @@ const (
 
 func main() {
 	printBanner(os.Stdout)
-	if err := run(); err != nil {
+	if result, err := run(); err != nil {
 		printError(os.Stderr, err)
 		os.Exit(1)
+	} else {
+		printResult(os.Stdout, result)
 	}
 }
-func run() error {
+
+func run() (*bert.TransformResult, error) {
 	inputPath := flag.String("input", "", "input path, can be a file or directory")
 	outputPath := flag.String("output", "", "the output directory path")
 	mode := flag.String("mode", "scale", "resize mode. Options: scale, crop")
@@ -39,59 +43,49 @@ func run() error {
 		os.Exit(0)
 	}
 
-	// was the program called with unnamed arguments?
-	if len(os.Args) >= 2 {
-		if *inputPath == "" {
-			inputPath = &os.Args[1]
-		}
-	}
-
-	if len(os.Args) >= 3 {
-		if *outputPath == "" {
-			outputPath = &os.Args[2]
-		}
-	}
+	// Use only the non-flag arguments as positional input and output paths.
+	applyPositionalPaths(inputPath, outputPath, flag.Args())
 
 	// verify input
 	if *inputPath == "" {
-		return fmt.Errorf("input path is required")
+		return nil, fmt.Errorf("input path is required")
 	}
 	if _, err := os.Stat(*inputPath); os.IsNotExist(err) {
-		return fmt.Errorf("input path does not exist: %s", *inputPath)
+		return nil, fmt.Errorf("input path does not exist: %s", *inputPath)
 	}
 
 	if *outputPath == "" {
-		return fmt.Errorf("output path is required")
+		return nil, fmt.Errorf("output path is required")
 	}
 
 	if err := ensureOutputPath(*outputPath); err != nil {
-		return err
+		return nil, err
 	}
 
 	fileImageSource := bert.NewFileImageSource(*inputPath, *outputType)
 	fileImageErr, isErr := fileImageSource.ErrorValue()
 
 	if isErr {
-		return fileImageErr
+		return nil, fileImageErr
 	}
 
 	imageSource, isOk := fileImageSource.Value()
 
 	if !isOk {
-		return fmt.Errorf("An unknown error occurred when accessing the image source")
+		return nil, fmt.Errorf("An unknown error occurred when accessing the image source")
 	}
 
 	outputHandlerResult := bert.NewFileOutputHandler(*outputPath)
 	outputHandlerErr, isErr := outputHandlerResult.ErrorValue()
 
 	if isErr {
-		return outputHandlerErr
+		return nil, outputHandlerErr
 	}
 
 	outputHandler, isOk := outputHandlerResult.Value()
 
 	if !isOk {
-		return fmt.Errorf("An unknown error occurred when accessing the output handler")
+		return nil, fmt.Errorf("An unknown error occurred when accessing the output handler")
 	}
 
 	result := bert.RunTransform(bert.TransformOptions{
@@ -112,10 +106,24 @@ func run() error {
 	})
 
 	if e, isErr := result.ErrorValue(); isErr {
-		return e
+		return nil, e
 	}
 
-	return nil
+	if v, isOk := result.Value(); isOk {
+		return &v, nil
+	}
+
+	return nil, fmt.Errorf("An unknown error occurred when accessing the transform result")
+}
+
+func applyPositionalPaths(inputPath, outputPath *string, positionalArgs []string) {
+	if len(positionalArgs) >= 1 && *inputPath == "" {
+		*inputPath = positionalArgs[0]
+	}
+
+	if len(positionalArgs) >= 2 && *outputPath == "" {
+		*outputPath = positionalArgs[1]
+	}
 }
 
 func ensureOutputPath(path string) error {
@@ -134,6 +142,30 @@ func ensureOutputPath(path string) error {
 	return nil
 }
 
+func printResult(w io.Writer, r *bert.TransformResult) {
+	trns := fmt.Sprintf("mode: %s / output: %s (%s) / dimensions: %v",
+		r.Transform.Mode,
+		r.Transform.OutputType,
+		r.Transform.Quality,
+		r.Transform.Dimensions)
+
+	var files []string
+
+	for i, result := range r.Results {
+		files = append(files, fmt.Sprintf("#%3d, %s", i+1, result.Name))
+	}
+
+	fmt.Fprintf(w, `
+* Processing took: %s
+
+* Transform: %s
+
+* File(s):
+  %s
+
+`, r.Duration, trns, strings.Join(files, "\n  "))
+}
+
 // source: https://patorjk.com/software/taag/#p=display&f=Modular&t=BERT&x=none&v=4&h=4&w=75&we=false
 func printBanner(w io.Writer) {
 	fmt.Fprintf(w, `
@@ -144,7 +176,6 @@ func printBanner(w io.Writer) {
 |  _   | |    ___||    __  |  |   |
 | |_|   ||   |___ |   |  | |  |   |
 |_______||_______||___|  |_|  |___|   %s
-
   `, version)
 }
 
@@ -155,92 +186,3 @@ func printError(w io.Writer, err error) {
 
   `, err)
 }
-
-// func processImage(src imageToProcess, resize input) error {
-// 	original, err := os.Open(src.inputPath)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to open src file: %v", err)
-// 	}
-// 	defer original.Close()
-
-// 	resized, err := os.Create(src.outputPath)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to create resize file: %v", err)
-// 	}
-// 	defer resized.Close()
-
-// 	decodedImage, err := decodeImage(original, getMimetype(src.inputPath))
-// 	if err != nil {
-// 		return fmt.Errorf("failed to decode image: %v", err)
-// 	}
-
-// 	// Scale the image to the desired width while maintaining the aspect ratio
-// 	scaledImage := scale.ScaleImage(decodedImage, scale.ScaleTo{
-// 		Width:  resize.width,
-// 		Height: resize.height,
-// 		Focal:  resize.focalPoint})
-
-// 	switch {
-// 	case resize.outputMimetype == pngMimeType:
-// 		return png.Encode(resized, scaledImage)
-// 	default:
-// 		return jpeg.Encode(resized, scaledImage, &jpeg.Options{Quality: resize.quality})
-// 	}
-// }
-
-// func decodeImage(original io.Reader, mimeType string) (image.Image, error) {
-// 	var src image.Image
-// 	var err error
-
-// 	switch mimeType {
-// 	case jpegMimeType:
-// 		src, err = jpeg.Decode(original)
-// 	case pngMimeType:
-// 		src, err = png.Decode(original)
-// 	case webpMimeType:
-// 		src, err = webp.Decode(original)
-// 	default:
-// 		src, err = nil, fmt.Errorf("unsupported image format: %s", mimeType)
-// 	}
-
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return src, nil
-// }
-
-// func getImages(inputPath string, outputPath string, outputExtension string) ([]imageToProcess, error) {
-// 	inputStat, err := os.Stat(inputPath)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	var files []string
-// 	if inputStat.IsDir() {
-// 		dirFiles, err := os.ReadDir(inputPath)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		for _, file := range dirFiles {
-// 			files = append(files, filepath.Join(inputPath, file.Name()))
-// 		}
-// 	} else {
-// 		files = []string{inputPath}
-// 	}
-
-// 	var images []imageToProcess
-
-// 	for _, file := range files {
-// 		if bert.IsImage(file) {
-// 			outputName := strings.Replace(filepath.Base(file), filepath.Ext(file), "."+outputExtension, 1)
-// 			outputPath := filepath.Join(outputPath, outputName)
-
-// 			images = append(images, imageToProcess{
-// 				inputPath:  file,
-// 				outputPath: outputPath})
-// 		}
-// 	}
-
-// 	return images, nil
-// }

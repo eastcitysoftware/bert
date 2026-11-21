@@ -8,8 +8,6 @@
 Resize images in bulk.
 </div>
 
----
-
 ## Usage
 
 ```text
